@@ -164,3 +164,7 @@ const result = await res.json(); // { status: 'ok' } or { status: 'error', error
 | `write_failed` | The connection dropped while printing. |
 | `denied` | The user did not allow the request. |
 
+
+## Privacy
+
+M Thermal Print stores everything on your device and sends nothing to any server. See the [privacy policy](privacy.md) ([ภาษาไทย](privacy-th.md)).
