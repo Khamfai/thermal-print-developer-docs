@@ -11,6 +11,25 @@ M Thermal Print is a free print service for thermal receipt printers on Android 
 
 > **Status:** version 1.0.0. Android and iOS are built and covered by automated tests. StarPRNT has been tested on a Star mC-Print3. On-device verification of the rest is still in progress. The Google Play and App Store releases are being prepared.
 
+## Printer compatibility
+
+| Printer | Language | Connection | Result |
+|---|---|---|---|
+| Star mC-Print3 | StarPRNT | — | ✅ Works |
+| Gprinter GP-58MBIII | ESC/POS | Bluetooth Classic | ❌ Not supported |
+
+### Gprinter GP-58MBIII over Bluetooth Classic
+
+This printer does not work reliably with M Thermal Print over Bluetooth Classic. Use a different printer.
+
+- **Pairing:** it must be paired in Android **Settings → Bluetooth** before the app can connect. Without pairing, the first job prints and every later connection fails with `printer_unreachable`.
+- **Corrupted prints:** the printer has no flow control. When data arrives faster than it can take it, it drops bytes. Images are hit first, and Thai text is printed as an image:
+  - the receipt does not feed out at the end;
+  - the next job starts with garbage (often Chinese characters) before it recovers.
+- **Easy to miss in a quick test:** plain ASCII text and very small images print correctly, so a short test can pass and real receipts still fail.
+
+Bluetooth LE has not been tested with this printer.
+
 ## Ways to send a print job
 
 | Channel | Android | iOS |
