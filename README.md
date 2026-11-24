@@ -1,13 +1,15 @@
-# Thermal-print-developer-docs
+# M Thermal Print: developer docs
 
-A free print service for thermal receipt printers on Android and iOS. Set up your printer once in the app. After that, any other app or web page can print through it: send a job and the app does the printing. There is no license fee, account, watermark, or internet connection involved.
+How to print to a thermal receipt printer from your own app or web page through **M Thermal Print** (app ID `com.mounoydev.print`).
+
+M Thermal Print is a free print service for thermal receipt printers on Android and iOS. The user sets up their printer once in the app. After that, any other app or web page can print through it: send a job and the app does the printing. There is no license fee, account, watermark, or internet connection involved.
 
 - **Printer languages:** ESC/POS (Epson-compatible, which covers almost every low-cost printer) and StarPRNT (Star Micronics).
 - **Connections:** Bluetooth Classic (Android only), Bluetooth LE, and LAN/Wi-Fi (raw TCP, port 9100).
 - **Content:** raw printer bytes, text, images, PDF and HTML. Thai and every other non-ASCII script is rendered to an image with an embedded font, so it prints correctly even on printers with no Thai font.
 - **App languages:** English and Thai.
 
-> **Status:** phases 1–3 (Android and iOS) are built and covered by automated tests. On-device verification is still in progress; see [the device checklist](docs/superpowers/plans/2026-11-21-phase1-device-checklist.md). StarPRNT has not yet been tested on a real Star printer. Store release is phase 4.
+> **Status:** version 1.0.0. Android and iOS are built and covered by automated tests. On-device verification is still in progress, and StarPRNT has not yet been tested on a real Star printer. The Google Play and App Store releases are being prepared.
 
 ## Ways to send a print job
 
@@ -102,6 +104,8 @@ location.href = `mdprint://print?job=${b64url}&callback=${encodeURIComponent(loc
 - On Android, the callback must be an `http(s)` URL.
 - On iOS, the callback can be an `http(s)` URL or another app's own URL scheme, such as `mypos://printed`. System schemes such as `tel:`, `sms:`, `shortcuts:` and `javascript:` are ignored.
 
+**Without a callback on iOS.** Nothing brings the user back to your page or app. The result card stays on screen until the user closes it and tells them to tap **◀ Safari** (or the app they came from) at the top left of the screen. Pass a `callback` if you want the user returned automatically.
+
 ### Android Intent (apps)
 
 ```kotlin
@@ -130,28 +134,45 @@ const res = await fetch('http://127.0.0.1:18800/print', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(job),
 });
-const result = await res.json(); // { status: 'ok' } or { status: 'error', error_code, message }
+const result = await res.json();
+// { status: 'ok' }
+// { status: 'error', error_code, message }
+// { status: 'denied', error_code: 'denied', message }
 ```
+
+`message` is a short fixed text. It never includes printer addresses or connection details.
 
 **Permission prompts.**
 - Chrome 142 and later asks once for local network access.
-- The app asks once per website, using a notification with Allow and Deny.
+- The app asks once per website, using a notification with Allow and Deny. The request waits up to 60 seconds for an answer.
+  - No answer: the request fails with 403, and the next request asks again.
+  - **Deny:** requests from that site get 403 without a prompt for the next 3 minutes.
+  - Approved sites can be revoked in Settings.
 
-`GET /status` returns `{"api":1,"app":"thermal-print"}`.
+**Request rules.**
+- Requests must be sent to `127.0.0.1:18800` or `localhost:18800`. Any other `Host` header gets 403.
+- `POST /print` needs an `Origin` header. Browsers add it to these `fetch` requests automatically.
+- Each site can send up to 30 requests a minute. Up to 4 jobs print at once; more get 503 `busy`.
+- CORS preflight (`OPTIONS`) is answered, including Chrome's private network access header.
+
+`GET /status` returns `{"api":1,"app":"thermal-print"}` and needs no `Origin` header. Use it to check whether the server is running.
 
 **HTTP status codes**
 
-| HTTP | Meaning |
-|---|---|
-| 200 | `ok` |
-| 400 | `invalid_job` |
-| 403 | The site was not approved |
-| 408 | `timeout`: the body arrived too slowly |
-| 409 | `no_printer` |
-| 413 | `too_large` |
-| 429 | `rate_limited` |
-| 502 | `printer_unreachable` or `write_failed` |
-| 503 | `busy` |
+| HTTP | `error_code` | Meaning |
+|---|---|---|
+| 200 | — | Printed. |
+| 400 | `invalid_job` | The job is malformed. |
+| 403 | `denied` | The site is not approved, the user denied it, the `Origin` header is missing, or the `Host` is not allowed. |
+| 404 | `not_found` | Unknown path. |
+| 405 | `method_not_allowed` | Wrong method for the path. |
+| 408 | `timeout` | The body did not arrive within 30 seconds. |
+| 409 | `no_printer` | No printer is set up. |
+| 413 | `too_large` | The body or the job exceeds a limit. |
+| 429 | `rate_limited` | More than 30 requests a minute from this site. |
+| 500 | `write_failed` | Internal error. |
+| 502 | `printer_unreachable` or `write_failed` | The printer could not be reached, or the connection dropped while printing. |
+| 503 | `busy` | Too many jobs in progress. Try again shortly. |
 
 ### Error codes (all channels)
 
@@ -163,6 +184,8 @@ const result = await res.json(); // { status: 'ok' } or { status: 'error', error
 | `printer_unreachable` | The app could not connect to the printer. |
 | `write_failed` | The connection dropped while printing. |
 | `denied` | The user did not allow the request. |
+
+The local HTTP server can also return `busy`, `rate_limited`, `timeout`, `not_found` and `method_not_allowed`; see its table above.
 
 
 ## Privacy
