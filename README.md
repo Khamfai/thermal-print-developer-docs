@@ -4,12 +4,12 @@ How to print to a thermal receipt printer from your own app or web page through 
 
 M Thermal Print is a free print service for thermal receipt printers on Android and iOS. The user sets up their printer once in the app. After that, any other app or web page can print through it: send a job and the app does the printing. There is no license fee, account, watermark, or internet connection involved.
 
-- **Printer languages:** ESC/POS (Epson-compatible, which covers almost every low-cost printer) and StarPRNT (Star Micronics).
+- **Printer languages:** ESC/POS (Epson-compatible, which covers almost every low-cost printer) and StarPRNT (Star Micronics; tested on the mC-Print3).
 - **Connections:** Bluetooth Classic (Android only), Bluetooth LE, and LAN/Wi-Fi (raw TCP, port 9100).
 - **Content:** raw printer bytes, text, images, PDF and HTML. Thai and every other non-ASCII script is rendered to an image with an embedded font, so it prints correctly even on printers with no Thai font.
 - **App languages:** English and Thai.
 
-> **Status:** version 1.0.0. Android and iOS are built and covered by automated tests. On-device verification is still in progress, and StarPRNT has not yet been tested on a real Star printer. The Google Play and App Store releases are being prepared.
+> **Status:** version 1.0.0. Android and iOS are built and covered by automated tests. StarPRNT has been tested on a Star mC-Print3. On-device verification of the rest is still in progress. The Google Play and App Store releases are being prepared.
 
 ## Ways to send a print job
 
